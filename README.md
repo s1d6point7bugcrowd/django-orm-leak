@@ -1,12 +1,12 @@
-# Django ORM Information Leak Nuclei Template
+# Django ORM Information Leak (Enhanced) Nuclei Template
 
 ## Overview
 
-This Nuclei template, identified as `django-orm-leak`, is designed to detect information leaks in Django applications that occur due to the improper handling of ORM (Object-Relational Mapping) queries. Specifically, it tests for vulnerabilities where unrestricted keyword arguments to the Django ORM's `filter` method can lead to unauthorized access to sensitive data.
+This Nuclei template, identified as `django-orm-leak-enhanced`, is designed to identify a broader range of information leaks in Django applications stemming from improper handling of ORM (Object-Relational Mapping) queries. It extends the original `django-orm-leak` template by incorporating checks for various data types and leakage methods, including numeric, text-based, and regex pattern filters.
 
 ## Author
 
-ProjectDiscoveryAI
+s1d6p01nt7
 
 ## Severity
 
@@ -14,40 +14,40 @@ High
 
 ## Description
 
-This template checks Django applications for potential information leaks. By manipulating ORM queries with unrestricted keyword arguments, an attacker can construct queries that reveal sensitive data, such as administrative information or password hashes.
+This enhanced template specifically targets vulnerabilities in Django applications that could allow unauthorized access to sensitive data through ORM queries. By testing different types of data filters (numeric, text, regex), the template helps in pinpointing areas where ORM query handling might be misconfigured or too permissive, leading to potential data exposure.
 
 ## HTTP Requests
 
-The template includes two critical HTTP POST requests:
+The template executes several HTTP requests to validate the security of ORM handling:
 
-1. **Admin Data Leak Check**:
-   - This test checks for the unauthorized query of articles that might start with the title "admin," potentially exposing restricted content.
+1. **Admin Interface Check**:
+   - Verifies the presence of a Django administration login page to confirm that the application is built with Django.
 
-2. **Password Leak Check**:
-   - This test probes for possible leaks by querying password hashes, specifically checking if any passwords start with the hash prefix `pbkdf2_sha256`.
+2. **Numeric Data Leak Check**:
+   - Tests for numeric-based data leaks by attempting to retrieve articles with IDs greater than a specified value.
 
-Each request uses matchers to validate the response based on status codes and specific keywords that indicate a leak.
+3. **Text-based Data Leak Check**:
+   - Probes for text-based data leaks by filtering articles that start with a specific title string, checking for unrestricted access to text data.
+
+4. **Regex Pattern Leakage Check**:
+   - Assesses the handling of regex patterns in queries by filtering usernames based on a complex regex pattern, observing for server errors or performance degradation indicative of potential security issues.
 
 ## Matchers
 
-- Both tests require a `200 OK` status response.
-- The presence of targeted keywords in the response body ("admin" for the first test and "pbkdf2_sha256" for the second) confirms the potential vulnerability.
+Each test is equipped with specific matchers:
+- **Status codes** (e.g., 200, 500) to detect successful interactions or server errors.
+- **Response body content** to identify whether the filter results include expected or sensitive data.
+- **Response times** to identify potential performance issues that might suggest ReDoS vulnerabilities.
 
 ## Usage
 
 ### Prerequisites
 
-Ensure you have Nuclei installed and configured on your system. For installation guidance, refer to [Nuclei's official documentation](https://github.com/projectdiscovery/nuclei).
+Ensure Nuclei is installed on your system. For installation details, refer to [Nuclei's official documentation](https://github.com/projectdiscovery/nuclei).
 
 ### Running the Template
 
-To execute this template against a target, use the following command:
+To use this template against a target, execute the following command:
 
 ```bash
-nuclei -t django-orm-leak.yaml -target https://example.com
-
-
-
-
-
-https://www.elttam.com/blog/plormbing-your-django-orm/#how-can-orms-leak
+nuclei -t django-orm-leak-enhanced.yaml -target https://example.com
